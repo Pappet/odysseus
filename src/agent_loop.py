@@ -262,6 +262,11 @@ _DOMAIN_RULES = {
 - Use `manage_settings` for preferences and tool enable/disable.
 - Use named tools over `app_api` when a named wrapper exists.
 - `app_api` is only for safe UI/API actions without a named tool; do not use it for shell, package installs, engine rebuilds, or sensitive auth/admin paths.""",
+    "github": """\
+## GitHub rules
+- For the user's GitHub repos, issues, pull requests, file contents, or code search, use `manage_github` (repo is always "owner/name").
+- This is the GitHub API, not local files: do NOT use bash/git or file tools for the user's GitHub account.
+- If `manage_github` reports the account is not connected, tell the user to connect a token in Tools -> GitHub.""",
 }
 
 _DOMAIN_TOOL_MAP = {
@@ -274,6 +279,7 @@ _DOMAIN_TOOL_MAP = {
     "sessions": {"create_session", "list_sessions", "manage_session", "send_to_session", "search_chats"},
     "files": {"bash", "python", "read_file", "write_file", "edit_file", "grep", "glob", "ls"},
     "settings": {"manage_settings", "manage_endpoints", "manage_mcp", "manage_webhooks", "manage_tokens", "app_api"},
+    "github": {"manage_github"},
 }
 
 def _domain_rules_for_tools(tool_names: set) -> list[str]:
@@ -804,6 +810,9 @@ def _classify_agent_request(messages: List[Dict], last_user: str) -> Dict[str, o
         domains.add("files")
     if has(r"\b(endpoint|api token|mcp|webhook|preference|configure|config|setting)\b"):
         domains.add("settings")
+    # GitHub account (repos/issues/PRs), distinct from local git/file work.
+    if has(r"\b(github|repos?|repositor(?:y|ies)|issues?|pull requests?|prs?|gist)\b"):
+        domains.add("github")
 
     low_signal = not continuation and not domains
     return {

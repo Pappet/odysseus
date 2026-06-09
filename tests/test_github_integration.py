@@ -95,6 +95,25 @@ def test_tool_is_selectable_by_agent():
     assert "manage_github" in _select("list my PRs")
 
 
+def test_github_domain_classification_not_low_signal():
+    """GitHub requests must be classified as a domain (not low_signal), else the
+    agent short-circuits to always-available tools and never seeds manage_github."""
+    from src.agent_loop import _classify_agent_request, _DOMAIN_TOOL_MAP, _DOMAIN_RULES
+
+    assert "github" in _DOMAIN_TOOL_MAP
+    assert "manage_github" in _DOMAIN_TOOL_MAP["github"]
+    assert "github" in _DOMAIN_RULES  # _domain_rules_for_tools indexes this by domain
+
+    for msg in ("zeig mir meine github repos", "check the open issues",
+                "list my PRs", "was ist in meinem repository"):
+        intent = _classify_agent_request([], msg)
+        assert intent["low_signal"] is False, msg
+        assert "github" in intent["domains"], msg
+
+    # Unrelated requests must NOT pull in the github domain.
+    assert "github" not in _classify_agent_request([], "what is the weather today")["domains"]
+
+
 def test_routes_registered():
     from routes.github_routes import setup_github_routes
 

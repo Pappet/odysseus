@@ -450,6 +450,19 @@ If `dtend` omitted, defaults to dtstart+1h (or +1d when `all_day: true`). \
 For a RECURRING event pass `rrule` as an iCalendar RRULE string, e.g. `"FREQ=WEEKLY;BYDAY=MO"` (every Monday), `"FREQ=DAILY;COUNT=10"`, or `"FREQ=MONTHLY;BYMONTHDAY=1"` — create ONE event with the rrule, do not loop creating many events. \
 If the user asks for a reminder/alarm before the event, pass `reminder_minutes` as an integer; do not write reminder text into the event description and do NOT also call `manage_notes` for the same reminder because calendar reminders are routed through Notes automatically. \
 `calendar` accepts a name ("Main") or short-id prefix.""",
+    "manage_github": """\
+```manage_github
+{"action": "list_repos"}
+```
+GitHub for the user's connected account. Read actions: `list_repos`, `get_repo`, `list_issues`, `list_pulls`, `read_file`, `search_code`. Write actions (need a token with write scope): `create_issue`, `comment`, `create_pull`. \
+`repo` is ALWAYS "owner/name". \
+For `list_issues`/`list_pulls`: {repo, state?(open|closed|all)}. \
+For `read_file`: {repo, path, ref?}. \
+For `search_code`: {query}. \
+For `create_issue`: {repo, title, body?, labels?}. \
+For `comment`: {repo, number, body}. \
+For `create_pull`: {repo, title, head, base, body?, draft?}. \
+The account must be connected first in the GitHub panel (Tools → GitHub); if it isn't, tell the user to connect a token there.""",
     "create_session": "- ```create_session``` — Create a new chat. Line 1 = chat name, line 2 = model name. Use for background/parallel work.",
     "list_sessions": "- ```list_sessions``` — List chats sorted MOST-RECENT FIRST (the UI calls them 'chats') with clickable chat-title links. Output includes a relative \"last active\" timestamp per row, so the first row is the user's most recent chat. Content = optional filter keyword (matches chat name). When answering, preserve the `[title](#session-id)` links exactly; do not convert them into plain text.",
     "send_to_session": "- ```send_to_session``` — Send a message to another session. Line 1 = session_id, rest = message. Use for orchestrating work across sessions.",

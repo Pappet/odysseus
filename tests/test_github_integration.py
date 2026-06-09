@@ -72,6 +72,29 @@ def test_schema_tag_dispatch_parity():
     assert "manage_github" in TOOL_TAGS
 
 
+def test_tool_is_selectable_by_agent():
+    """manage_github must be in the RAG registry + keyword hints, otherwise the
+    agent never offers it to the model (it filters schemas by selected tools)."""
+    import re
+    from src.tool_index import BUILTIN_TOOL_DESCRIPTIONS, ToolIndex
+    from src.agent_loop import TOOL_SECTIONS
+
+    assert "manage_github" in BUILTIN_TOOL_DESCRIPTIONS  # embedded for retrieval
+    assert "manage_github" in TOOL_SECTIONS              # fenced-block docs
+
+    def _select(query: str):
+        ql = query.lower()
+        out = set()
+        for kws, tools in ToolIndex._KEYWORD_HINTS.items():
+            if any(re.search(rf"\b{re.escape(k)}\b", ql) for k in kws):
+                out |= tools
+        return out
+
+    assert "manage_github" in _select("show my github repos")
+    assert "manage_github" in _select("check the open issues")
+    assert "manage_github" in _select("list my PRs")
+
+
 def test_routes_registered():
     from routes.github_routes import setup_github_routes
 

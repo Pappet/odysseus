@@ -2492,6 +2492,89 @@ async def do_manage_calendar(content: str, owner: Optional[str] = None) -> Dict:
         db.close()
 
 
+async def do_manage_github(content: str, owner: Optional[str] = None) -> Dict:
+    """Handle manage_github tool calls: browse and act on the user's GitHub.
+
+    Native (slim) counterpart to the official GitHub MCP server. Goes through
+    the same ``GitHubService`` the UI uses, so the connected token and rate
+    limits are shared. ``repo`` must be "owner/name". Write actions
+    (create_issue, comment, create_pull) require a token with write scope.
+    """
+    from services.github import GitHubService, GitHubError
+
+    try:
+        args = _parse_tool_args(content)
+    except ValueError:
+        return {"error": "Invalid JSON arguments", "exit_code": 1}
+
+    action = (args.get("action") or "list_repos").replace("-", "_").strip().lower()
+    repo = (args.get("repo") or args.get("full_name") or "").strip()
+    svc = GitHubService(owner)
+    if not svc.connected:
+        return {"error": "GitHub is not connected. Connect an account in the GitHub panel first.",
+                "exit_code": 1}
+
+    def _need_repo():
+        if not repo or "/" not in repo:
+            raise ValueError("This action needs `repo` as 'owner/name'")
+
+    try:
+        if action == "list_repos":
+            repos = await svc.list_repos(sort=args.get("sort", "updated"))
+            return {"repos": [{"full_name": r.full_name, "private": r.private,
+                               "description": r.description, "language": r.language,
+                               "stars": r.stars, "open_issues": r.open_issues,
+                               "updated_at": r.updated_at} for r in repos]}
+        if action == "get_repo":
+            _need_repo()
+            return (await svc.get_repo(repo)).__dict__
+        if action in ("list_issues", "issues"):
+            _need_repo()
+            return {"issues": await svc.list_issues(repo, state=args.get("state", "open"))}
+        if action in ("list_pulls", "list_prs", "pulls"):
+            _need_repo()
+            return {"pulls": await svc.list_pulls(repo, state=args.get("state", "open"))}
+        if action in ("read_file", "get_file", "contents"):
+            _need_repo()
+            path = (args.get("path") or "").strip()
+            if not path:
+                return {"error": "read_file needs `path`", "exit_code": 1}
+            return await svc.get_file(repo, path, ref=args.get("ref"))
+        if action == "search_code":
+            q = (args.get("query") or args.get("q") or "").strip()
+            if not q:
+                return {"error": "search_code needs `query`", "exit_code": 1}
+            return {"results": await svc.search_code(q)}
+        if action == "create_issue":
+            _need_repo()
+            title = (args.get("title") or "").strip()
+            if not title:
+                return {"error": "create_issue needs `title`", "exit_code": 1}
+            return await svc.create_issue(repo, title, args.get("body", ""), args.get("labels"))
+        if action in ("comment", "add_comment"):
+            _need_repo()
+            number = args.get("number") or args.get("issue_number")
+            body = (args.get("body") or "").strip()
+            if not number or not body:
+                return {"error": "comment needs `number` and `body`", "exit_code": 1}
+            return await svc.comment(repo, int(number), body)
+        if action in ("create_pull", "create_pr"):
+            _need_repo()
+            for k in ("title", "head", "base"):
+                if not args.get(k):
+                    return {"error": f"create_pull needs `{k}`", "exit_code": 1}
+            return await svc.create_pull(repo, args["title"], args["head"], args["base"],
+                                         args.get("body", ""), bool(args.get("draft")))
+        return {"error": f"Unknown action '{action}'", "exit_code": 1}
+    except ValueError as e:
+        return {"error": str(e), "exit_code": 1}
+    except GitHubError as e:
+        return {"error": str(e), "exit_code": 1}
+    except Exception as e:
+        logger.error(f"manage_github error: {e}")
+        return {"error": str(e), "exit_code": 1}
+
+
 # ── Cookbook tools ──
 
 # In-process loopback base for agent tools that call Odysseus's own API

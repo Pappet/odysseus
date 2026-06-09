@@ -1,10 +1,28 @@
 # Konzept: GitHub / Git-Anbindung für Odysseus
 
-> Status: Entwurf / Diskussionsgrundlage
+> Status: MVP umgesetzt (Connect + Browse + native Agent-Tools) · weitere Stufen offen
 > Ziel: Eine erste Klasse-Integration für GitHub, die (a) eine Übersicht über
 > die eigenen Repos liefert und (b) GitHub als Datenquelle/Aktionsfläche für die
 > übrigen Odysseus-Funktionen (Agent, Chat, Notes, Tasks, Research, Editor)
 > verfügbar macht.
+
+## Getroffene Entscheidungen
+
+1. **Auth:** Hybrid – Fine-grained PAT als Default + OAuth Device-Flow als One-Click-Option.
+2. **Schreibrechte:** Ja, „Claude-Code-artig" (Issue/Comment/PR-Erstellung; Branch/Commit perspektivisch über MCP).
+3. **Agent:** Hybrid – schlanke native Read/Write-Tools (`manage_github`) **+** optional der offizielle GitHub-MCP-Server für die volle Tool-Breite.
+4. **Umfang:** Alle eigenen Repos inkl. Issues, PRs, Datei-Inhalten und Code-Suche.
+
+## Umsetzungsstand (dieser PR)
+
+- **Service:** `services/github/` (`GitHubService`, DTOs, verschlüsselte Token-Helfer über `ProviderAuthSession`).
+- **Routes:** `routes/github_routes.py` (`/api/github/*`): Status, PAT-Connect, Device-Flow, Disconnect, Repos, Issues, PRs, Contents, Code-Suche, Write (Issue/Comment/PR). Registriert in `app.py`.
+- **Agent-Tool:** `manage_github` (Schema in `tool_schemas.py`, Handler `do_manage_github`, Dispatch in `tool_execution.py`, Tag in `agent_tools`).
+- **Frontend:** `static/js/github.js` Panel + Nav-Button + Deep-Link `/github`.
+- **Config:** `ODYSSEUS_GITHUB_CLIENT_ID` / `ODYSSEUS_GITHUB_SCOPE` (siehe `.env.example`).
+
+Noch offen (Folge-Stufen): offizieller GitHub-MCP-Server als Registrierungs-Preset,
+Tasks-Issue-Watcher, Notes↔Issues, Editor↔Repo-Datei, Webhook-Empfang, Repo-Cache.
 
 ## 1. Leitidee
 

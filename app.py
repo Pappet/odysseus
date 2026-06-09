@@ -603,6 +603,10 @@ app.include_router(setup_copilot_routes())
 from routes.chatgpt_subscription_routes import setup_chatgpt_subscription_routes
 app.include_router(setup_chatgpt_subscription_routes())
 
+# GitHub integration (repos / issues / PRs — browse + agent actions)
+from routes.github_routes import setup_github_routes
+app.include_router(setup_github_routes())
+
 # TTS
 from routes.tts_routes import setup_tts_routes
 app.include_router(setup_tts_routes(tts_service))
@@ -761,6 +765,10 @@ async def serve_notes(request: Request):
 
 @app.get("/calendar")
 async def serve_calendar(request: Request):
+    return await serve_index(request)
+
+@app.get("/github")
+async def serve_github(request: Request):
     return await serve_index(request)
 
 # Per-tool deep-link routes — all serve the same SPA, the JS auto-opens

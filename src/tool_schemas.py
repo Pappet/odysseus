@@ -559,6 +559,36 @@ FUNCTION_TOOL_SCHEMAS = [
     {
         "type": "function",
         "function": {
+            "name": "manage_github",
+            "description": "Browse and act on the user's connected GitHub account. Read actions: list_repos, get_repo, list_issues, list_pulls, read_file, search_code. Write actions (need a token with write scope): create_issue, comment, create_pull. `repo` is always 'owner/name'. The account must be connected in the GitHub panel first.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "action": {"type": "string",
+                               "enum": ["list_repos", "get_repo", "list_issues", "list_pulls",
+                                        "read_file", "search_code", "create_issue", "comment", "create_pull"],
+                               "description": "Action to perform"},
+                    "repo": {"type": "string", "description": "Target repository as 'owner/name'"},
+                    "state": {"type": "string", "enum": ["open", "closed", "all"], "description": "Filter for list_issues/list_pulls (default open)"},
+                    "path": {"type": "string", "description": "File path within the repo (read_file)"},
+                    "ref": {"type": "string", "description": "Git ref / branch for read_file (optional)"},
+                    "query": {"type": "string", "description": "Code search query (search_code)"},
+                    "title": {"type": "string", "description": "Title for create_issue / create_pull"},
+                    "body": {"type": "string", "description": "Body text for create_issue / comment / create_pull"},
+                    "labels": {"type": "array", "items": {"type": "string"}, "description": "Labels for create_issue"},
+                    "number": {"type": "integer", "description": "Issue/PR number for comment"},
+                    "head": {"type": "string", "description": "Source branch for create_pull"},
+                    "base": {"type": "string", "description": "Target branch for create_pull"},
+                    "draft": {"type": "boolean", "description": "Open the PR as a draft (create_pull)"},
+                    "sort": {"type": "string", "description": "Sort for list_repos (default 'updated')"}
+                },
+                "required": ["action"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "manage_notes",
             "description": "Manage notes and checklists (Google Keep-style): list, add, update, delete, toggle_item. IMPORTANT: For to-do lists / checklists, set note_type='checklist' and pass the items as the `checklist_items` array — do NOT serialize them into `content` as plain text. For freeform notes, use note_type='note' and put the body in `content`. `due_date` accepts natural language like 'tomorrow at 9am' (parsed in the user's timezone) and fires a notification — do not also create a calendar event for the same reminder.",
             "parameters": {
